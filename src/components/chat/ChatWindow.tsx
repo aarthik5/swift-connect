@@ -29,6 +29,7 @@ interface ChatWindowProps {
   otherUser: Profile | null;
   onSendMessage: (content: string) => void;
   isTyping?: boolean;
+  onClose: () => void;
 }
 
 const ChatWindow = ({
@@ -37,6 +38,7 @@ const ChatWindow = ({
   otherUser,
   onSendMessage,
   isTyping,
+  onClose,
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -169,6 +171,28 @@ const ChatWindow = ({
           </Button>
           <Button variant="ghost" size="icon" className="rounded-lg">
             <MoreVertical className="w-5 h-5 text-muted-foreground" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-lg hover:bg-destructive/10 hover:text-destructive"
+            onClick={onClose}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
           </Button>
         </div>
       </div>

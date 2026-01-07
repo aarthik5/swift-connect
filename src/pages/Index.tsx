@@ -96,6 +96,7 @@ const Index = () => {
         currentUserId={user.id}
         otherUser={getOtherUser()}
         onSendMessage={sendMessage}
+        onClose={() => setSelectedConversation(null)}
       />
       <NewChatDialog
         open={newChatOpen}

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -35,6 +36,11 @@ export const useChat = (userId: string | null) => {
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const selectedConvRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    selectedConvRef.current = selectedConversation;
+  }, [selectedConversation]);
 
   // Fetch current user's profile
   useEffect(() => {
@@ -199,30 +205,49 @@ export const useChat = (userId: string | null) => {
     fetchMessages();
   }, [selectedConversation, userId]);
 
-  // Subscribe to real-time messages
+  // Global Subscribe to real-time messages
   useEffect(() => {
-    if (!selectedConversation) return;
+    if (!userId) return;
 
     const channel = supabase
-      .channel(`messages-${selectedConversation}`)
+      .channel("global-messages")
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `conversation_id=eq.${selectedConversation}`,
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          setMessages((prev) => [...prev, newMessage]);
 
-          // Mark as read if not from current user
-          if (newMessage.sender_id !== userId) {
-            supabase
-              .from("messages")
-              .update({ is_read: true, is_delivered: true })
-              .eq("id", newMessage.id);
+          // Update conversations list (Last Message & Unread Count)
+          setConversations((prev) =>
+            prev.map((conv) => {
+              if (conv.id === newMessage.conversation_id) {
+                const isSelected = selectedConvRef.current === newMessage.conversation_id;
+                return {
+                  ...conv,
+                  lastMessage: newMessage.content,
+                  lastMessageTime: newMessage.created_at,
+                  unreadCount: isSelected ? 0 : (conv.unreadCount || 0) + (newMessage.sender_id !== userId ? 1 : 0)
+                };
+              }
+              return conv;
+            })
+          );
+
+          // If this message belongs to the OPEN chat, update messages list
+          if (selectedConvRef.current === newMessage.conversation_id) {
+            setMessages((prev) => [...prev, newMessage]);
+
+            // Mark as read if not from current user
+            if (newMessage.sender_id !== userId) {
+              supabase
+                .from("messages")
+                .update({ is_read: true, is_delivered: true })
+                .eq("id", newMessage.id);
+            }
           }
         }
       )
@@ -232,13 +257,15 @@ export const useChat = (userId: string | null) => {
           event: "UPDATE",
           schema: "public",
           table: "messages",
-          filter: `conversation_id=eq.${selectedConversation}`,
         },
         (payload) => {
+          // We only care about updates for the CURRENTLY OPEN chat
           const updatedMessage = payload.new as Message;
-          setMessages((prev) =>
-            prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m))
-          );
+          if (selectedConvRef.current === updatedMessage.conversation_id) {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m))
+            );
+          }
         }
       )
       .subscribe();
@@ -246,7 +273,20 @@ export const useChat = (userId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedConversation, userId]);
+  }, [userId]);
+
+  // Clear unread count when selecting a conversation
+  useEffect(() => {
+    if (selectedConversation) {
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === selectedConversation
+            ? { ...conv, unreadCount: 0 }
+            : conv
+        )
+      );
+    }
+  }, [selectedConversation]);
 
   // Subscribe to profile updates for online status
   useEffect(() => {
