@@ -1,73 +1,67 @@
-# Welcome to your Lovable project
+# ⚡️ Swift Connect
 
-## Project info
+**Swift Connect** is a modern, secure, and real-time messaging application designed for seamless communication. Built with speed and privacy in mind, it bridges the gap between simple chat apps and professional communication tools.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![Swift Connect Preview](public/favicon.svg)
+*(You can add a screenshot of your app dashboard here later)*
 
-## How can I edit this code?
+## 🚀 Key Features
 
-There are several ways of editing your application.
+*   **Real-Time Messaging**: Instant message delivery with live status updates (Sent, Delivered, Read).
+*   **Typing Indicators**: See when others are typing in real-time for a more engaging experience.
+*   **Smart "Delete for Me"**: Clear your chat history without affecting the other participant's view—your privacy, your control.
+*   **Group Chats**: Create dynamic group conversations with multiple participants.
+*   **Secure Authentication**: Full email/password login system including "Forgot Password" functionality.
+*   **Online Status**: Real-time "Online" and "Last Seen" indicators.
+*   **Modern UI/UX**: A sleek, responsive interface built with Tailwind CSS and Shadcn UI, featuring a custom teal/primary theme.
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+*   **Frontend**: React (Vite), TypeScript
+*   **Styling**: Tailwind CSS, Shadcn UI, Lucide Icons
+*   **Backend & Realtime**: Supabase (PostgreSQL, Realtime Subscriptions, Auth)
+*   **State Management**: React Query, React Hooks
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚦 Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
+*   Node.js (v18 or higher)
+*   npm or yarn
+*   A Supabase project
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/aarthik5/swift-connect.git
+    cd swift-connect
+    ```
 
-Follow these steps:
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3.  **Configure Environment**
+    Create a `.env` file in the root directory and add your Supabase credentials:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_project_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4.  **Run the application**
+    ```bash
+    npm run dev
+    ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🗄️ Database Setup
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+To enable all features (like "Delete for Me"), run the SQL scripts provided in the repository (e.g., `setup_new_database.sql`) in your Supabase SQL Editor. This sets up the necessary tables, RLS policies, and database functions.
 
-**Edit a file directly in GitHub**
+## 🤝 Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+*Built with ❤️ by Aarthik*
