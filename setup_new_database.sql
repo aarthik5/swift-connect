@@ -16,6 +16,8 @@ CREATE TABLE public.profiles (
 -- Create conversations table
 CREATE TABLE public.conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT,
+  is_group BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -163,6 +165,8 @@ CREATE TRIGGER update_conversations_updated_at
   BEFORE UPDATE ON public.conversations
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- Enable realtime for messages and profiles
+-- Enable realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversation_participants;

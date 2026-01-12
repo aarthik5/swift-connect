@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, LogOut, MessageCircle } from "lucide-react";
+import { Search, Plus, LogOut, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +20,8 @@ interface Conversation {
   lastMessage?: string;
   lastMessageTime?: string;
   unreadCount?: number;
+  title?: string;
+  is_group?: boolean;
 }
 
 interface ChatSidebarProps {
@@ -43,12 +45,17 @@ const ChatSidebar = ({
   searchQuery,
   onSearchChange,
 }: ChatSidebarProps) => {
-  const filteredConversations = conversations.filter((conv) =>
-    conv.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConversations = conversations.filter((conv) => {
+    // Hide empty direct chats (unless selected)
+    if (!conv.lastMessage && !conv.is_group && conv.id !== selectedConversation) {
+      return false;
+    }
+    const name = conv.is_group ? conv.title : conv.otherUser.username;
+    return name?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const getInitials = (name: string) => {
-    return name
+    return (name || "?")
       .split(" ")
       .map((n) => n[0])
       .join("")
@@ -61,7 +68,7 @@ const ChatSidebar = ({
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     } else if (diffDays === 1) {
@@ -79,10 +86,10 @@ const ChatSidebar = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-white" />
+              <Zap className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-foreground">Messages</h1>
+              <h1 className="font-semibold text-foreground">Swift Connect</h1>
               <p className="text-xs text-muted-foreground">
                 {currentUser?.username || "Loading..."}
               </p>
@@ -125,7 +132,7 @@ const ChatSidebar = ({
         {filteredConversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <MessageCircle className="w-8 h-8 text-muted-foreground" />
+              <Zap className="w-8 h-8 text-muted-foreground" />
             </div>
             <p className="text-muted-foreground text-sm">
               {searchQuery ? "No conversations found" : "No conversations yet"}
@@ -140,49 +147,56 @@ const ChatSidebar = ({
           </div>
         ) : (
           <div className="py-2">
-            {filteredConversations.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => onSelectConversation(conv.id)}
-                className={cn(
-                  "w-full p-3 flex items-center gap-3 hover:bg-chat-sidebar-hover transition-colors",
-                  selectedConversation === conv.id && "bg-chat-sidebar-hover"
-                )}
-              >
-                <div className="relative">
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={conv.otherUser.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                      {getInitials(conv.otherUser.username)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span
-                    className={cn(
-                      "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-chat-sidebar",
-                      conv.otherUser.is_online ? "bg-online pulse-online" : "bg-offline"
+            {filteredConversations.map((conv) => {
+              const displayName = conv.is_group ? conv.title : conv.otherUser.username;
+              const isOnline = !conv.is_group && conv.otherUser.is_online;
+
+              return (
+                <button
+                  key={conv.id}
+                  onClick={() => onSelectConversation(conv.id)}
+                  className={cn(
+                    "w-full p-3 flex items-center gap-3 hover:bg-chat-sidebar-hover transition-colors",
+                    selectedConversation === conv.id && "bg-chat-sidebar-hover"
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar className="w-12 h-12">
+                      {!conv.is_group && <AvatarImage src={conv.otherUser.avatar_url || undefined} />}
+                      <AvatarFallback className={cn("text-primary font-medium", conv.is_group ? "bg-secondary text-secondary-foreground" : "bg-primary/10")}>
+                        {getInitials(displayName || "")}
+                      </AvatarFallback>
+                    </Avatar>
+                    {isOnline && (
+                      <span
+                        className={cn(
+                          "absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-chat-sidebar",
+                          "bg-online pulse-online"
+                        )}
+                      />
                     )}
-                  />
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-foreground truncate">
-                      {conv.otherUser.username}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(conv.lastMessageTime)}
-                    </span>
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {conv.lastMessage || "Start a conversation"}
-                  </p>
-                </div>
-                {conv.unreadCount && conv.unreadCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
-                    {conv.unreadCount}
-                  </span>
-                )}
-              </button>
-            ))}
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground truncate">
+                        {displayName}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatTime(conv.lastMessageTime)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {conv.lastMessage || "Start a conversation"}
+                    </p>
+                  </div>
+                  {conv.unreadCount && conv.unreadCount > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+                      {conv.unreadCount}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

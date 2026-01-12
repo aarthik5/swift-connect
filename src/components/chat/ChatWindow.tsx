@@ -1,9 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Phone, Video, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Send, Check, CheckCheck, MoreVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Message {
   id: string;
@@ -29,7 +35,10 @@ interface ChatWindowProps {
   otherUser: Profile | null;
   onSendMessage: (content: string) => void;
   isTyping?: boolean;
+
   onClose: () => void;
+  onDelete: () => void;
+  onTyping: (isTyping: boolean) => void;
 }
 
 const ChatWindow = ({
@@ -39,14 +48,27 @@ const ChatWindow = ({
   onSendMessage,
   isTyping,
   onClose,
+  onDelete,
+  onTyping,
 }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (newMessage) {
+      onTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        onTyping(false);
+      }, 2000);
+    }
+  }, [newMessage]);
 
   useEffect(() => {
     scrollToBottom();
@@ -163,15 +185,21 @@ const ChatWindow = ({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="rounded-lg">
-            <Phone className="w-5 h-5 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-lg">
-            <Video className="w-5 h-5 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-lg">
-            <MoreVertical className="w-5 h-5 text-muted-foreground" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-lg">
+                <MoreVertical className="w-5 h-5 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={onDelete}
+                className="text-destructive focus:text-destructive cursor-pointer"
+              >
+                Delete Chat
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="icon"

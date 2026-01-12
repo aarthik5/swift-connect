@@ -45,9 +45,38 @@ const Index = () => {
     setSelectedConversation,
     sendMessage,
     createConversation,
+    createGroupConversation,
+    deleteConversation,
     getOtherUser,
     loading: chatLoading,
+    onlineUsers,
+    isTyping,
+    sendTyping,
   } = useChat(user?.id || null);
+
+  const activeConversations = conversations.map((c) => ({
+    ...c,
+    otherUser: {
+      ...c.otherUser,
+      is_online: onlineUsers.has(c.otherUser.user_id),
+    },
+  }));
+
+  const activeOtherUser =
+    activeConversations.find((c) => c.id === selectedConversation)?.otherUser || null;
+
+  // If group, override activeOtherUser to display Group Name
+  const selectedConv = activeConversations.find((c) => c.id === selectedConversation);
+  const displayUser = selectedConv?.is_group
+    ? {
+      id: selectedConv.id,
+      user_id: selectedConv.id, // dummy
+      username: selectedConv.title || "Group Chat",
+      avatar_url: null,
+      is_online: false,
+      last_seen: new Date().toISOString(),
+    }
+    : activeOtherUser;
 
   const handleLogout = async () => {
     await supabase
@@ -82,7 +111,7 @@ const Index = () => {
   return (
     <div className="h-screen flex overflow-hidden bg-background">
       <ChatSidebar
-        conversations={conversations}
+        conversations={activeConversations}
         selectedConversation={selectedConversation}
         onSelectConversation={setSelectedConversation}
         onNewChat={() => setNewChatOpen(true)}
@@ -94,16 +123,20 @@ const Index = () => {
       <ChatWindow
         messages={messages}
         currentUserId={user.id}
-        otherUser={getOtherUser()}
+        otherUser={displayUser}
         onSendMessage={sendMessage}
         onClose={() => setSelectedConversation(null)}
+        onDelete={() => selectedConversation && deleteConversation(selectedConversation)}
+        isTyping={isTyping}
+        onTyping={sendTyping}
       />
       <NewChatDialog
         open={newChatOpen}
         onOpenChange={setNewChatOpen}
         onSelectUser={handleNewChat}
+        onCreateGroup={createGroupConversation}
         currentUserId={user.id}
-        existingConversationUserIds={conversations.map((c) => c.otherUser.user_id)}
+        existingConversationUserIds={activeConversations.map((c) => c.otherUser.user_id)}
       />
     </div>
   );

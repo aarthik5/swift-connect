@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { Zap, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Auth = () => {
@@ -14,6 +14,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,7 +38,14 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/update-password`,
+        });
+        if (error) throw error;
+        toast.success("Check your email for password reset instructions.");
+        setIsForgotPassword(false);
+      } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -50,7 +58,7 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -62,7 +70,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Account created successfully!");
+        toast.success("Account created successfully! Please check your email.");
       }
     } catch (error: any) {
       console.error("Auth error:", error);
@@ -88,21 +96,27 @@ const Auth = () => {
       <Card className="w-full max-w-md relative z-10 shadow-xl border-0 bg-card/80 backdrop-blur-sm animate-slide-up">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto mb-4 w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
-            <MessageCircle className="w-8 h-8 text-white" />
+            <Zap className="w-8 h-8 text-white" />
           </div>
           <CardTitle className="text-2xl font-bold">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {isForgotPassword
+              ? "Reset Password"
+              : isLogin
+                ? "Welcome Back"
+                : "Create Account"}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            {isLogin
-              ? "Sign in to continue chatting"
-              : "Join the conversation today"}
+            {isForgotPassword
+              ? "Enter your email to receive reset instructions"
+              : isLogin
+                ? "Sign in to continue chatting"
+                : "Join the conversation today"}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {!isLogin && !isForgotPassword && (
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-sm font-medium">
                   Username
@@ -116,7 +130,7 @@ const Auth = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="pl-10 h-11 bg-background border-input"
-                    required={!isLogin}
+                    required={!isLogin && !isForgotPassword}
                   />
                 </div>
               </div>
@@ -140,24 +154,38 @@ const Auth = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-11 bg-background border-input"
-                  required
-                  minLength={6}
-                />
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 h-11 bg-background border-input"
+                    required={!isForgotPassword}
+                    minLength={6}
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {isLogin && !isForgotPassword && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(true)}
+                  className="text-xs text-primary hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -168,7 +196,11 @@ const Auth = () => {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  {isLogin ? "Sign In" : "Create Account"}
+                  {isForgotPassword
+                    ? "Send Reset Instructions"
+                    : isLogin
+                      ? "Sign In"
+                      : "Create Account"}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
@@ -177,14 +209,26 @@ const Auth = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium"
-              >
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
+              {isForgotPassword ? (
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Back to Sign In
+                </button>
+              ) : (
+                <>
+                  {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(!isLogin)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {isLogin ? "Sign up" : "Sign in"}
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </CardContent>
